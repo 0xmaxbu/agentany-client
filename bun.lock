@@ -1,0 +1,25 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "agentany-client",
+    },
+    "apps/client-core": {
+      "name": "@agentany/device-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@agentany/ws-protocol": "workspace:*",
+      },
+    },
+    "packages/ws-protocol": {
+      "name": "@agentany/ws-protocol",
+      "version": "0.1.0",
+    },
+  },
+  "packages": {
+    "@agentany/device-core": ["@agentany/device-core@workspace:apps/client-core"],
+
+    "@agentany/ws-protocol": ["@agentany/ws-protocol@workspace:packages/ws-protocol"],
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@agentany/device-core",
+  "version": "0.1.0",
+  "description": "设备客户端核心执行库（ADR-0034/0037：薄执行器）——WS 连接/心跳/重连/顶号语义 + 工具分派。无头可测，Tauri 壳后置。",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@agentany/ws-protocol": "workspace:*"
+  }
+}
