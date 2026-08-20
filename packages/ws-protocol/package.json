@@ -1,0 +1,10 @@
+{
+  "name": "@agentany/ws-protocol",
+  "version": "0.1.0",
+  "description": "agentany 设备 WS 协议单一真相源（ADR-0034 D2）：tool_call/tool_result/check_environment/env_report/env_remediated/ping/pong + 可序列化 schema。hyper-workflow 服务端与设备客户端共同消费。",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": ["src"]
+}

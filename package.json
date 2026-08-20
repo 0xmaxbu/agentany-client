@@ -1,0 +1,8 @@
+{
+  "name": "agentany-client",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "bun test"
+  }
+}
