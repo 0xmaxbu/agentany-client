@@ -9,7 +9,7 @@
       "name": "@agentany/device-core",
       "version": "0.1.0",
       "dependencies": {
-        "@agentany/ws-protocol": "workspace:*",
+        "@agentany/ws-protocol": "file:../../packages/ws-protocol",
       },
     },
     "packages/ws-protocol": {
@@ -21,5 +21,7 @@
     "@agentany/device-core": ["@agentany/device-core@workspace:apps/client-core"],
 
     "@agentany/ws-protocol": ["@agentany/ws-protocol@workspace:packages/ws-protocol"],
+
+    "@agentany/device-core/@agentany/ws-protocol": ["@agentany/ws-protocol@file:packages/ws-protocol", {}],
   }
 }
