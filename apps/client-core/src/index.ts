@@ -6,3 +6,7 @@ export * from "./executors";
 export * from "./dispatcher";
 export * from "./session";
 export * from "./computer-use";
+export * from "./browser/cdp";
+export * from "./browser/backend";
+export * from "./browser/core";
+export * from "./browser/executors";

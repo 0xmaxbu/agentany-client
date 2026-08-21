@@ -7,6 +7,7 @@ import { promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { defaultExecutors } from "./executors";
+import { browserHandlers } from "./browser/executors";
 import type { ExecContext, ExecOutcome, ToolHandler } from "./executor-types";
 
 export interface ComputerUseHandlers {
@@ -226,7 +227,7 @@ function makeHandlers(): ComputerUseHandlers {
   return { "computer_use.screens": screens, "computer_use.observe": observe, "computer_use.act": act };
 }
 
-/** P3 完整执行器表：五执行器 + computer-use 三件套。 */
+/** P4 完整执行器表：五执行器 + computer-use 三件套 + browser 六件套。 */
 export function allExecutors(): Record<string, ToolHandler> {
-  return { ...defaultExecutors(), ...makeHandlers() };
+  return { ...defaultExecutors(), ...makeHandlers(), ...browserHandlers() };
 }
