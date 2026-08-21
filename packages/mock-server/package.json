@@ -1,0 +1,15 @@
+{
+  "name": "@agentany/mock-server",
+  "version": "0.1.0",
+  "description": "hyper-workflow 服务器设备面的忠实 mock（issue #9 双仓分层测试）：/health、/auth/device-login/logout、/ws/device（upgrade 校验/顶号/登出/ping-pong/tool_call 编排）、/files/device-upload。协议真相源 @agentany/ws-protocol；真服务器+真客户端只出现在集成层。",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@agentany/ws-protocol": "file:../ws-protocol"
+  }
+}

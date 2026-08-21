@@ -10,6 +10,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@agentany/ws-protocol": "file:../../packages/ws-protocol"
+    "@agentany/ws-protocol": "file:../../packages/ws-protocol",
+    "@agentany/mock-server": "file:../../packages/mock-server"
   }
 }

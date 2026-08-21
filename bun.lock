@@ -9,7 +9,15 @@
       "name": "@agentany/device-core",
       "version": "0.1.0",
       "dependencies": {
+        "@agentany/mock-server": "file:../../packages/mock-server",
         "@agentany/ws-protocol": "file:../../packages/ws-protocol",
+      },
+    },
+    "packages/mock-server": {
+      "name": "@agentany/mock-server",
+      "version": "0.1.0",
+      "dependencies": {
+        "@agentany/ws-protocol": "file:../ws-protocol",
       },
     },
     "packages/ws-protocol": {
@@ -20,8 +28,16 @@
   "packages": {
     "@agentany/device-core": ["@agentany/device-core@workspace:apps/client-core"],
 
+    "@agentany/mock-server": ["@agentany/mock-server@workspace:packages/mock-server"],
+
     "@agentany/ws-protocol": ["@agentany/ws-protocol@workspace:packages/ws-protocol"],
 
+    "@agentany/device-core/@agentany/mock-server": ["@agentany/mock-server@file:packages/mock-server", { "dependencies": { "@agentany/ws-protocol": "file:../ws-protocol" } }],
+
     "@agentany/device-core/@agentany/ws-protocol": ["@agentany/ws-protocol@file:packages/ws-protocol", {}],
+
+    "@agentany/mock-server/@agentany/ws-protocol": ["@agentany/ws-protocol@file:packages/ws-protocol", {}],
+
+    "@agentany/device-core/@agentany/mock-server/@agentany/ws-protocol": ["@agentany/ws-protocol@file:packages/ws-protocol", {}],
   }
 }
