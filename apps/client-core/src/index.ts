@@ -5,3 +5,4 @@ export * from "./executor-types";
 export * from "./executors";
 export * from "./dispatcher";
 export * from "./session";
+export * from "./computer-use";
