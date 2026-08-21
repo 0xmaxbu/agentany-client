@@ -90,8 +90,9 @@ export class DeviceClient {
     this.open();
   }
 
-  /** 主动停机关连：清定时器 + 关 socket；终态，不再重连。 */
+  /** 主动停机关连：清定时器 + 关 socket；终态，不再重连。已终态（顶号/登出/停过）→ no-op，不重复吐 onStop。 */
   stop(): void {
+    if (this.stopped) return;
     this.stopped = true;
     this.clearTimers();
     const ws = this.ws;

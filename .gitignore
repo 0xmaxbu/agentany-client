@@ -1,2 +1,7 @@
 node_modules/
 .build/
+dist/
+apps/shell/src-tauri/target/
+apps/shell/src-tauri/binaries/
+apps/shell/src-tauri/icons/android/
+apps/shell/src-tauri/icons/ios/

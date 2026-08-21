@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"主窗（设置/onboarding/授权管理）与授权弹窗","local":true,"windows":["main","consent"],"permissions":["core:default","core:window:allow-close","core:window:allow-hide","autostart:allow-enable","autostart:allow-disable","autostart:allow-is-enabled"]}}

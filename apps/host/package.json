@@ -1,0 +1,11 @@
+{
+  "name": "@agentany/host",
+  "module": "src/main.ts",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@agentany/device-core": "file:../client-core",
+    "@agentany/mock-server": "file:../../packages/mock-server"
+  }
+}

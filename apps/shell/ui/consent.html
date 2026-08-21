@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <title>会话借用授权</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="consent">
+  <h2 id="c-title">会话借用请求</h2>
+  <div id="c-body"></div>
+  <p class="muted">无响应 <span id="c-count">60</span>s 后将视为拒绝。</p>
+  <div class="actions" id="c-actions">
+    <button data-act="deny">拒绝</button>
+    <button data-act="allow_once">本次允许</button>
+    <button data-act="allow_tool">总是允许该工具</button>
+    <button data-act="allow_always" class="primary">总是允许</button>
+  </div>
+  <script src="consent.js"></script>
+</body>
+</html>

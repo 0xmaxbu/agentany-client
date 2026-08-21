@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <title>AgentAny 设备客户端</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>AgentAny 设备客户端</h1>
+    <span id="conn" class="badge off">未连接</span>
+  </header>
+
+  <section id="sec-login">
+    <h2>接入服务器</h2>
+    <p class="trust">⚠️ 信任提示：登录后，该服务器将能在此设备上执行任意命令（含 computer-use 桌面控制与浏览器会话借用）。请仅接入你信任的服务器。</p>
+    <label>服务器地址 <input id="f-url" placeholder="http://192.168.1.10:3000" /></label>
+    <label>用户名 <input id="f-user" autocomplete="username" /></label>
+    <label>密码 <input id="f-pass" type="password" autocomplete="current-password" /></label>
+    <button id="btn-login" class="primary">登录并连接</button>
+    <p id="login-err" class="err"></p>
+  </section>
+
+  <section id="sec-manage" hidden>
+    <div class="row spread">
+      <span id="dev-id" class="muted"></span>
+      <button id="btn-logout">登出</button>
+    </div>
+  </section>
+
+  <section id="sec-grants">
+    <h2>授权管理（会话借用）</h2>
+    <div class="row">
+      借用类默认
+      <select id="g-borrow"></select>
+      其余工具
+      <select id="g-rest"></select>
+    </div>
+    <h3>已记住的授权</h3>
+    <ul id="g-remembered" class="plain"></ul>
+    <h3>例外规则（细粒度优先）</h3>
+    <table id="g-rules">
+      <thead><tr><th>工作流</th><th>工具/工具面</th><th>host</th><th>策略</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="row">
+      <input id="r-wf" placeholder="工作流ID（可空=全部）" />
+      <input id="r-tool" placeholder="bash / browser / computer_use …" />
+      <input id="r-host" placeholder="host（可空）" />
+      <select id="r-policy"></select>
+      <button id="btn-add-rule">添加</button>
+    </div>
+    <div class="row spread">
+      <label class="inline"><input type="checkbox" id="autostart" /> 开机自启</label>
+      <button id="btn-save-grants" class="primary">保存授权</button>
+    </div>
+    <p id="grants-msg" class="muted"></p>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
