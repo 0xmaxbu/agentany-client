@@ -1,11 +1,13 @@
-// 工具分派层（R-6 P2）：tool_call 帧 → 对应执行器 → 上传产物流 → tool_result 回传。
+// 工具分派层（R-6 P2 + P5b 授权拦截）：tool_call 帧 → 会话借用授权 gate → 执行器 → 上传产物流 → tool_result 回传。
 // 职责线：帧解析/未知工具兜底/每 run 工作区解析/异常兜底——执行器保持纯函数（executor-types.ts）。
 // 一次 handle() 一个 tool_call；同连接多 run 并发互不阻塞（每帧独立 await）。
+// gate（ADR-0038 D1 统一拦截点）opt-in：AgentClient 默认装配；直用 Dispatcher 的测试/嵌入可不装。
 import { basename } from "node:path";
 import { mkdirSync } from "node:fs";
 import type { ToolCallFrame } from "@agentany/ws-protocol";
 import type { DeviceClientMessage } from "@agentany/ws-protocol";
 import type { ToolArtifact } from "@agentany/ws-protocol";
+import type { ConsentGate } from "./consent";
 import type { ExecContext, ToolHandler } from "./executor-types";
 
 export interface UploadResult {
@@ -24,6 +26,8 @@ export interface ToolDispatcherOpts {
   send(msg: DeviceClientMessage): void;
   httpBase: string;
   getToken(): string;
+  /** 会话借用授权 gate（ADR-0038）：所有 tool_call 过此拦截点再进执行器。 */
+  consent?: ConsentGate;
 }
 
 export class ToolDispatcher {
@@ -35,6 +39,20 @@ export class ToolDispatcher {
     if (!handler) {
       this.o.send({ type: "tool_result", id: frame.id, ok: false, code: "unknown_tool", error: `unknown tool: ${frame.tool}` });
       return;
+    }
+    if (this.o.consent) {
+      const verdict = await this.o.consent.checkTool({ callId: frame.id, workflowId: frame.workflowId, tool: frame.tool, args: frame.args });
+      if (verdict === "denied") {
+        // deny = 纯透传（ADR-0038 D6）：run 不中止/不重试/不转 HITL——错误文案即处理（LLM 读它改道）。
+        this.o.send({
+          type: "tool_result",
+          id: frame.id,
+          ok: false,
+          code: "denied",
+          error: `denied by device user: ${frame.tool}（workflow ${frame.workflowId}）——设备用户拒绝本次会话借用；请勿重试同一工具，改用其他路径完成目标`,
+        });
+        return;
+      }
     }
     const workDir = this.o.workDir(frame.runId);
     mkdirSync(workDir, { recursive: true });

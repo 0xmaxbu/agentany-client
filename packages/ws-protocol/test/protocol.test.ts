@@ -22,17 +22,19 @@ describe("schema 校验（跨进程序列化语义）", () => {
 });
 
 describe("线帧判别", () => {
-  test("server→device 与 device→server 各三/四型", () => {
+  test("server→device 与 device→server 各四/四型", () => {
     expect(isServerMessage({ type: "pong" })).toBe(true);
-    expect(isServerMessage({ type: "tool_call", id: "t1", tool: "bash", args: {}, schema: schema.any(), runId: "r1" })).toBe(true);
+    expect(isServerMessage({ type: "tool_call", id: "t1", tool: "bash", args: {}, schema: schema.any(), runId: "r1", workflowId: "wf1" })).toBe(true);
     expect(isServerMessage({ type: "check_environment", id: "e1", requirements: [] })).toBe(true);
+    expect(isServerMessage({ type: "env_pending", pendingStartId: "p1", workflowId: "wf1", items: [] })).toBe(true);
     expect(isServerMessage({ type: "tool_result", id: "t1", ok: true })).toBe(false); // 反方向
 
     expect(isClientMessage({ type: "ping" })).toBe(true);
     expect(isClientMessage({ type: "tool_result", id: "t1", ok: true, stdout: "x" })).toBe(true);
     expect(isClientMessage({ type: "env_report", id: "e1", result: { status: "pass", table: [] } })).toBe(true);
     expect(isClientMessage({ type: "env_remediated", pendingStartId: "p1", approved: true })).toBe(true);
-    expect(isClientMessage({ type: "tool_call", id: "t1", tool: "x", args: {}, schema: schema.any(), runId: "r1" })).toBe(false);
+    expect(isClientMessage({ type: "tool_call", id: "t1", tool: "x", args: {}, schema: schema.any(), runId: "r1", workflowId: "wf1" })).toBe(false);
+    expect(isClientMessage({ type: "env_pending", pendingStartId: "p1", workflowId: "wf1", items: [] })).toBe(false);
   });
   test("非协议帧/垃圾 → false", () => {
     expect(isClientMessage(null)).toBe(false);

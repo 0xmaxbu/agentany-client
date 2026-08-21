@@ -1,5 +1,6 @@
-// Agent 会话（R-6 P2）：DeviceClient（纯连接）组合 ToolDispatcher（分派+回传）——真实客户端入口。
-// 职责：连上服务器后，把 tool_call 帧交给分派层；产物上传凭当前 token。
+// Agent 会话（R-6 P2 + P5b）：DeviceClient（纯连接）组合 ToolDispatcher（分派+回传）与
+// DeviceEnvHandler（环境探测/补全）——真实客户端入口。所有 tool_call 经 ConsentGate（ADR-0038
+// 统一拦截点：规则引擎 + onConsent 弹窗抽象；无回调 = fail closed）。
 // 壳层（Tauri/无头 CLI）只用这一个类：connect/stop/onStatus/onStop。
 import { basename } from "node:path";
 import { readFileSync } from "node:fs";
@@ -7,6 +8,8 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { DeviceClient, type DeviceClientOpts, type DeviceClientStatus, type DeviceClientStopReason } from "./device-client";
 import { ToolDispatcher } from "./dispatcher";
+import { ConsentGate, type ConsentCallback } from "./consent";
+import { DeviceEnvHandler, type EnvCommandResult } from "./env";
 import type { ToolCallFrame } from "@agentany/ws-protocol";
 import type { ToolHandler } from "./executor-types";
 import { defaultExecutors } from "./executors";
@@ -21,6 +24,14 @@ export interface AgentClientOpts {
   handlers?: Record<string, ToolHandler>;
   /** 每 run 设备工作区解析器；缺省 ~/.agentany/workspaces/<runId>。 */
   workDir?: (runId: string) => string;
+  /** 会话借用授权（ADR-0038）：弹窗决策回调（Tauri 壳真弹窗/测试假实现；缺省 = 需询问即拒绝）。 */
+  onConsent?: ConsentCallback;
+  /** grants.json 目录（缺省 ~/.agentany；测试注入）。 */
+  grantsDir?: string;
+  /** browser 无 url 动作取当前页 host（站点授权「点击跟随」；壳层/浏览器装配注入）。 */
+  browserCurrentHost?: () => string | undefined;
+  /** env 探测/安装命令执行（缺省 bash -lc 本机；测试注入）。 */
+  runEnvCommand?: (command: string) => Promise<EnvCommandResult>;
   // —— DeviceClient 透传 ——
   pingIntervalMs?: number;
   getToken?: () => string | Promise<string>;
@@ -44,6 +55,7 @@ export class AgentClient {
     const handlers = o.handlers ?? defaultExecutors();
     const httpBase = o.httpBase ?? onHttp(o.wsUrl);
     const workDir = o.workDir ?? defaultWorkDir;
+    const consent = new ConsentGate({ onConsent: o.onConsent, dir: o.grantsDir, currentHost: o.browserCurrentHost });
     this.dispatcher = new ToolDispatcher({
       handlers,
       workDir,
@@ -51,7 +63,9 @@ export class AgentClient {
       getToken: () => this.token,
       upload: uploadFile,
       send: (msg) => this.client.send(msg),
+      consent, // ADR-0038 D1：所有 tool_call 过统一拦截点
     });
+    const env = new DeviceEnvHandler({ send: (msg) => this.client.send(msg), consent, runCommand: o.runEnvCommand });
     const wrappedGetToken: DeviceClientOpts["getToken"] = async () => {
       const t = o.getToken ? await o.getToken() : o.token; // 重连前重验：可换新 token
       if (typeof t === "string" && t.length > 0) this.token = t;
@@ -69,6 +83,8 @@ export class AgentClient {
       onStop: o.onStop,
       onServerMessage: (m) => {
         if (m.type === "tool_call") void this.dispatcher.handle(m as ToolCallFrame); // fire-and-forget：异常兜在 handle 内
+        else if (m.type === "check_environment") void env.onCheckEnvironment(m); // env 链路（P5b）：探测 → env_report
+        else if (m.type === "env_pending") void env.onEnvPending(m); // 挂起补全：onConsent → autoInstall → env_remediated
       },
     });
   }

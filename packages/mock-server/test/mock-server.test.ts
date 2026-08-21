@@ -170,12 +170,13 @@ describe("mock-server · tool_call 编排 + 产物回传", () => {
       a.messages.push(f);
       if (f.type === "tool_call") a.ws.send(JSON.stringify({ type: "tool_result", id: f.id, ok: true, stdout: "echo" }));
     };
-    const res = m.sendToolCall({ username: "u1", tool: "bash", args: { command: "true" }, runId: "run-1" });
+    const res = m.sendToolCall({ username: "u1", tool: "bash", args: { command: "true" }, runId: "run-1", workflowId: "wf-9" });
     await delayUntil(() => a.messages.some((x) => x.type === "tool_call"));
     const frame = a.messages.find((x) => x.type === "tool_call")!;
     expect(String(frame.id)).toMatch(/^tool-\d+$/);
     expect(frame.tool).toBe("bash");
     expect(frame.runId).toBe("run-1");
+    expect(frame.workflowId).toBe("wf-9"); // ADR-0038 D2：授权粒度标识随帧下发
     expect(await res).toMatchObject({ type: "tool_result", id: frame.id, ok: true, stdout: "echo" });
   });
 
@@ -189,6 +190,26 @@ describe("mock-server · tool_call 编排 + 产物回传", () => {
   test("设备离线时编排直接拒绝（寻址面=registry）（tool.ts 寻址）", async () => {
     await setup();
     await expect(m.sendToolCall({ username: "u1", tool: "bash" })).rejects.toThrow(/offline/);
+  });
+
+  test("env_pending 推送：帧形状 {pendingStartId, workflowId, items}（lifecycle 挂起时推；ADR-0038 env 链路）", async () => {
+    const token = await setup();
+    const a = wsConnect(m.wsUrl("/ws/device"), token, "dev-a");
+    await a.opened;
+    a.ws.onmessage = (ev) => a.messages.push(JSON.parse(String(ev.data)));
+    m.sendEnvPending({
+      username: "u1",
+      pendingStartId: "p-1",
+      workflowId: "wf-9",
+      items: [{ id: "ffmpeg", name: "ffmpeg", check: "ffmpeg -version", autoInstall: "brew install ffmpeg" }],
+    });
+    await delayUntil(() => a.messages.some((x) => x.type === "env_pending"));
+    expect(a.messages.find((x) => x.type === "env_pending")).toMatchObject({
+      type: "env_pending",
+      pendingStartId: "p-1",
+      workflowId: "wf-9",
+      items: [{ id: "ffmpeg", name: "ffmpeg", check: "ffmpeg -version", autoInstall: "brew install ffmpeg" }],
+    });
   });
 
   test("device-upload 成功：{path:runs/<runId>/<name>} + 真实落盘字节（files L28-34）", async () => {

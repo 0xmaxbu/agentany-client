@@ -20,7 +20,8 @@ export type CheckEnvironmentFrame = {
   requirements: EnvRequirement[];
 };
 
-/** 远端工具调用：设备按 tool+args+schema 本地执行并回 tool_result（产物走 POST /files/device-upload）。 */
+/** 远端工具调用：设备按 tool+args+schema 本地执行并回 tool_result（产物走 POST /files/device-upload）。
+ * workflowId = 授权粒度的稳定标识（ADR-0038 D2：runId 每次执行新开，不可当授权粒度；服务端按 run 查补）。 */
 export type ToolCallFrame = {
   type: "tool_call";
   id: string;
@@ -28,9 +29,20 @@ export type ToolCallFrame = {
   args: unknown;
   schema: Schema;
   runId: string;
+  workflowId: string;
 };
 
-export type DeviceServerMessage = PongFrame | CheckEnvironmentFrame | ToolCallFrame;
+/** 挂起补全请求（ADR-0033/R-4 + ADR-0038 env 链路）：run 因缺可自动补全环境挂起时，服务端推给设备——
+ * 设备用户经 onConsent 同意/拒绝；同意 → 设备本地跑 items[].autoInstall → 回 env_remediated(approved)，
+ * 服务端复检（重发 check_environment）后自动续跑。items = 缺失且可补全的完整要求（含探测/安装命令）。 */
+export type EnvPendingFrame = {
+  type: "env_pending";
+  pendingStartId: string;
+  workflowId: string;
+  items: EnvRequirement[];
+};
+
+export type DeviceServerMessage = PongFrame | CheckEnvironmentFrame | ToolCallFrame | EnvPendingFrame;
 
 // —— device → server ——
 
@@ -74,7 +86,7 @@ export type DeviceClientMessage = PingFrame | ToolResultFrame | EnvReportFrame |
 
 export function isServerMessage(m: unknown): m is DeviceServerMessage {
   const t = (m as { type?: unknown })?.type;
-  return t === "pong" || t === "check_environment" || t === "tool_call";
+  return t === "pong" || t === "check_environment" || t === "tool_call" || t === "env_pending";
 }
 
 export function isClientMessage(m: unknown): m is DeviceClientMessage {

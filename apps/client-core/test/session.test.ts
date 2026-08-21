@@ -31,6 +31,7 @@ describe("AgentClient × mock-server（全栈 round-trip）", () => {
       deviceId: "dev-1",
       handlers,
       workDir: (runId) => join(base, runId.replace(/[/\\:]/g, "_")),
+      grantsDir: mkdtempSync(join(tmpdir(), "agentany-grants-")), // 授权档隔离（P5b：不读真 HOME）
     });
     agent.connect();
     await m.waitForDevice("u1");

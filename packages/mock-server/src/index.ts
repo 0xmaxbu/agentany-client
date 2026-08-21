@@ -13,6 +13,7 @@ import type { ServerWebSocket } from "bun";
 import type {
   CheckEnvironmentFrame,
   DeviceClientMessage,
+  EnvPendingFrame,
   EnvRemediatedFrame,
   EnvReportFrame,
   EnvRequirement,
@@ -68,9 +69,12 @@ export interface MockServer {
   /** 注入掉线：粗暴断开当前连接（客户端视角≈1006，无终态 reason）。 */
   drop(username: string): void;
   /** 编排：向该用户在线设备发 tool_call，等回同 id 的 tool_result（超时/离线 reject）。 */
-  sendToolCall(o: { username: string; tool: string; args?: unknown; runId?: string; schema?: Schema }): Promise<ToolResultFrame>;
+  sendToolCall(o: { username: string; tool: string; args?: unknown; runId?: string; workflowId?: string; schema?: Schema }): Promise<ToolResultFrame>;
   /** 编排：发 check_environment，等回同 id 的 env_report。 */
   sendCheckEnvironment(o: { username: string; requirements: EnvRequirement[] }): Promise<EnvReportFrame>;
+  /** 推送挂起补全请求（真服务端在 pending 建立时推——lifecycle.ts；mock 无 env 引擎，由测试显式触发）。
+   * 无 correlation：设备的 env_remediated 记录在 remediations()。 */
+  sendEnvPending(o: { username: string; pendingStartId: string; workflowId: string; items: EnvRequirement[] }): void;
 }
 
 interface ConnData { userId: string; username: string; deviceId: string; token: string }
@@ -306,6 +310,7 @@ export function createMockServer(opts: MockServerOptions = {}): MockServer {
         args: o.args ?? {},
         schema: o.schema ?? { _t: "any" },
         runId: o.runId ?? "run-mock",
+        workflowId: o.workflowId ?? "wf-mock", // ADR-0038 D2：真服务端从 run 补值（bridge/server.ts）
       } as ToolCallFrame) as Promise<ToolResultFrame>,
     sendCheckEnvironment: (o) =>
       dispatch(o.username, {
@@ -313,5 +318,16 @@ export function createMockServer(opts: MockServerOptions = {}): MockServer {
         id: `env-${++envSeq}`,
         requirements: o.requirements,
       } as CheckEnvironmentFrame) as Promise<EnvReportFrame>,
+    sendEnvPending: (o) => {
+      const uid = userIdOf(o.username);
+      const entry = uid ? registry.get(uid) : undefined;
+      if (!entry) return;
+      const frame: EnvPendingFrame = { type: "env_pending", pendingStartId: o.pendingStartId, workflowId: o.workflowId, items: o.items };
+      try {
+        entry.ws.send(JSON.stringify(frame));
+      } catch {
+        /* 已关：丢弃（真服务端同姿态——推送失败靠 TTL 兜底） */
+      }
+    },
   };
 }
